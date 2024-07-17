@@ -1,0 +1,5 @@
+tensorflow[and-cuda]==2.16.1
+matplotlib
+opencv-python
+scikit-learn
+tf-slim

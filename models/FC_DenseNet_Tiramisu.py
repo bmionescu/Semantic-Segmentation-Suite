@@ -1,7 +1,7 @@
 from __future__ import division
 import os,time,cv2
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tf_slim as slim
 import numpy as np
 
 def preact_conv(inputs, n_filters, kernel_size=[3, 3], dropout_p=0.2):
@@ -103,7 +103,7 @@ def build_fc_densenet(inputs, num_classes, preset_model='FC-DenseNet56', n_filte
     else:
         raise ValueError
 
-    with tf.variable_scope(scope, preset_model, [inputs]) as sc:
+    with tf.compat.v1.variable_scope(scope, preset_model, [inputs]) as sc:
 
       #####################
       # First Convolution #

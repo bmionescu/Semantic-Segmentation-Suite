@@ -1,0 +1,130 @@
+Explaining the exact process for all the modifications made in this fork. The process was to run `python3 train.py --dataset dataset`, encounter an error, run a sed-based command to address it, rinse and repeat. A lot of these errors are just because we need to change tf to tf.compat.v1, but instead of changing `import tensorflow as tf` to `import tensorflow.compat.v1 as tf`, I opted to change things one by one when they strictly need to be compat.v1. Probably just changing the imports would have been better though.
+
+OS: Ubuntu 24.04
+Python version: 3.12.3
+TensorFlow version: 2.16.2
+
+First, a note: before running any `find` commands with, move the dataset outside the repo so that it doesn't spend a lot of time searching needlessly through the dataset, then put it back if you try to run `train.py`.
+
+1st error:
+ModuleNotFoundError: No module named 'tensorflow.contrib'
+
+find . -type f | xargs sed -i  's/import tensorflow\.contrib\.slim as slim/import tf_slim as slim/g'
+find . -type f | xargs sed -i  's/from tensorflow\.contrib import slim/import tf_slim as slim/g'
+
+2nd error:
+ImportError: cannot import name 'imread' from 'scipy.misc' (/home/monobuntu/monochrome/Semantic-Segmentation-Suite/lib/python3.12/site-packages/scipy/misc/__init__.py)
+
+sed -i '/from scipy\.misc import imread/d' ./utils/utils.py
+sed -i  's/ imread(/ cv2.imread(/g' ./utils/utils.py
+
+3rd error:
+AttributeError: module 'tensorflow' has no attribute 'contrib'
+
+find . -type f | xargs sed -i  's/slim = tf\.contrib\.slim/import tf_slim as slim/g'
+
+4th error:
+AttributeError: module 'tensorflow' has no attribute 'GraphKeys'
+
+find . -type f | xargs sed -i  's/tf\.GraphKeys/tf\.compat\.v1\.GraphKeys/g'
+
+5th error:
+AttributeError: module 'tensorflow' has no attribute 'ConfigProto'
+
+find . -type f | xargs sed -i  's/tf\.ConfigProto/tf\.compat\.v1\.ConfigProto/g'
+
+6th error:
+Segmentation fault (core dumped)
+It's from importing tensorflow. I uninstalled and reinstalled tensorflow, and it was solved. The segmentation fault came back in the future and uninstalling and reinstalling again solved it. It is probably from the `sed` commands, which are modifying and breaking the venv files for tensorflow... in which case, the sed-based commands should all ideally just be modified to not operate on the `lib` folder
+
+7th error:
+AttributeError: module 'tensorflow' has no attribute 'Session'. Did you mean: 'version'?
+
+find . -type f | xargs sed -i  's/tf\.Session/tf\.compat\.v1\.Session/g'
+
+8th error:
+AttributeError: module 'tensorflow' has no attribute 'placeholder'
+
+find . -type f | xargs sed -i  's/tf\.placeholder/tf\.compat\.v1\.placeholder/g'
+
+9th error: 
+RuntimeError: tf.placeholder() is not compatible with eager execution.
+
+sed -i '22i tf\.compat\.v1\.disable_eager_execution()' train.py
+sed -i '8i tf\.compat\.v1\.disable_eager_execution()' test.py
+sed -i '8i tf\.compat\.v1\.disable_eager_execution()' predict.py
+
+note that `placeholder` also appears in `frontends/resnet_v1.py` but no modifications were made there, if that model is used, it may throw an (easily fixed) error. 
+
+10th error:
+AttributeError: module 'tensorflow' has no attribute 'variable_scope'
+
+find . -type f | xargs sed -i  's/tf\.variable_scope/tf\.compat\.v1\.variable_scope/g'
+
+11th error:
+ModuleNotFoundError: No module named 'tf_keras'
+
+pip install tf-keras
+
+12th error:
+ModuleNotFoundError: No module named 'tf_keras.legacy_tf_layers'
+
+The issue is with the use of slim.batch_norm . I tried uninstalling tf_keras and reinstalling with the earliest version my environment would allow. `pip index versions tf-keras` yielded:
+2.17.0, 2.16.0, 2.15.1, 2.15.0, 2.14.1
+
+However, 2.14.1 led to
+
+13th error:
+AttributeError: module 'tensorflow._api.v2.compat.v2.__internal__' has no attribute 'register_load_context_function'. Did you mean: 'register_call_context_function'?
+
+2.15.0 led to the same error. 2.15.1 could not be installed:
+
+14th error:
+ERROR: Could not find a version that satisfies the requirement tensorflow<2.16,>=2.15 (from tf-keras) (from versions: 2.16.0rc0, 2.16.1, 2.16.2, 2.17.0rc0, 2.17.0rc1, 2.17.0)
+ERROR: No matching distribution found for tensorflow<2.16,>=2.15
+
+And, 2.16.0 and above lead to error #12. Error #12 is worse than error #13 because the former traces back to frozen files, basically executables, whereas the latter traces back to a python file that could be modified. But before such a drastic step, there are two options:
+
+- Not using a model that uses slim.batch_norm (all of them except GCN use it)
+
+15th error:
+AttributeError: module 'tensorflow.python.framework.ops' has no attribute 'Tensor'
+
+This is by dodging errors 12, 13, and 14 by just using the GCN model. 
+
+sed -i '31i from tensorflow import Tensor' lib/python3.12/site-packages/tf_slim/layers/utils.py
+sed -i 's/ops\.Tensor/Tensor/g' lib/python3.12/site-packages/tf_slim/layers/utils.py
+
+16th error:
+AttributeError: module 'tensorflow._api.v2.train' has no attribute 'RMSPropOptimizer'
+
+sed -i 's/tf\.train\.RMSPropOptimizer/tf\.compat\.v1\.train\.RMSPropOptimizer/g' train.py
+
+17th error:
+AttributeError: module 'tensorflow' has no attribute 'trainable_variables'
+
+sed -i 's/tf\.trainable_variables/tf\.compat\.v1\.trainable_variables/g' train.py
+sed -i 's/tf\.trainable_variables/tf\.compat\.v1\.trainable_variables/g' utils/utils.py
+
+18th error:
+AttributeError: module 'tensorflow._api.v2.train' has no attribute 'Saver'
+
+sed -i 's/tf\.train\.Saver/tf\.compat\.v1\.train\.Saver/g' train.py
+sed -i 's/tf\.train\.Saver/tf\.compat\.v1\.train\.Saver/g' test.py
+sed -i 's/tf\.train\.Saver/tf\.compat\.v1\.train\.Saver/g' predict.py
+
+19th error:
+AttributeError: module 'tensorflow' has no attribute 'global_variables_initializer'
+
+sed -i 's/tf\.global_variables_initializer/tf\.compat\.v1\.global_variables_initializer/g' train.py
+sed -i 's/tf\.global_variables_initializer/tf\.compat\.v1\.global_variables_initializer/g' test.py
+sed -i 's/tf\.global_variables_initializer/tf\.compat\.v1\.global_variables_initializer/g' predict.py
+
+20th error:
+AttributeError: 'int' object has no attribute 'value'
+
+sed -i 's/dim\.value/dim/g' utils/utils.py
+
+-----------------
+
+With this, it runs for me. 

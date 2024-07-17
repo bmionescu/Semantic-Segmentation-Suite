@@ -7,6 +7,10 @@
 ### What's New
 
 - This repo has been depricated and will no longer be handling issues. Feel free to use as is :)
+- (Comments from the forker) this fork is because I couldn't use this repo on Ubuntu 24 due to the use of deprecated functions
+- `python3 -m venv .` from the roof of this repo
+- `source bin/activate`
+- `python3 -m pip install -r requirements.txt`
 
 ## Description
 This repository serves as a Semantic Segmentation Suite. The goal is to easily be able to implement, train, and test new Semantic Segmentation models! Complete with the following:

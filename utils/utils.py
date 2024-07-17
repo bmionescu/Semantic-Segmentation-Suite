@@ -1,11 +1,10 @@
 from __future__ import print_function, division
 import os,time,cv2, sys, math
 import tensorflow as tf
-import tensorflow.contrib.slim as slim
+import tf_slim as slim
 import numpy as np
 import time, datetime
 import os, random
-from scipy.misc import imread
 import ast
 from sklearn.metrics import precision_score, \
     recall_score, confusion_matrix, classification_report, \
@@ -63,11 +62,11 @@ def LOG(X, f=None):
 # Count total number of parameters in the model
 def count_params():
     total_parameters = 0
-    for variable in tf.trainable_variables():
+    for variable in tf.compat.v1.trainable_variables():
         shape = variable.get_shape()
         variable_parameters = 1
         for dim in shape:
-            variable_parameters *= dim.value
+            variable_parameters *= dim
         total_parameters += variable_parameters
     print("This model has %d trainable parameters"% (total_parameters))
 
@@ -268,7 +267,7 @@ def compute_class_weights(labels_dir, label_values):
     total_pixels = 0.0
 
     for n in range(len(image_files)):
-        image = imread(image_files[n])
+        image = cv2.imread(image_files[n])
 
         for index, colour in enumerate(label_values):
             class_map = np.all(np.equal(image, colour), axis = -1)

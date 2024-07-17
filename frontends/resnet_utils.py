@@ -40,7 +40,7 @@ from __future__ import print_function
 import collections
 import tensorflow as tf
 
-slim = tf.contrib.slim
+import tf_slim as slim
 
 
 class Block(collections.namedtuple('Block', ['scope', 'unit_fn', 'args'])):
@@ -172,12 +172,12 @@ def stack_blocks_dense(net, blocks, multi_grid, output_stride=None,
   rate = 1
 
   for block in blocks:
-    with tf.variable_scope(block.scope, 'block', [net]) as sc:
+    with tf.compat.v1.variable_scope(block.scope, 'block', [net]) as sc:
       for i, unit in enumerate(block.args):
         if output_stride is not None and current_stride > output_stride:
           raise ValueError('The target output_stride cannot be reached.')
 
-        with tf.variable_scope('unit_%d' % (i + 1), values=[net]):
+        with tf.compat.v1.variable_scope('unit_%d' % (i + 1), values=[net]):
           # If we have reached the target output_stride, then we need to employ
           # atrous convolution with stride=1 and multiply the atrous rate by the
           # current unit's stride for use in subsequent layers.
