@@ -6,6 +6,8 @@ TensorFlow version: 2.16.2
 
 First, a note: before running any `find` commands with, move the dataset outside the repo so that it doesn't spend a lot of time searching needlessly through the dataset, then put it back if you try to run `train.py`.
 
+Second: Apologies for the inconvenience, but while some of the following 22 errors don't need to be fixed yourself, since the fixes are pushed to this fork, others operate on the lib folder of the python virtual environment, and those are not pushed to the fork. Unfortunately, I did not go to the trouble of organizing them according to which commands need to be run yourself and which can be skipped. What this means is that if you follow all of the following steps, you will get the repo working, but the procedure documented here is not the fastest way and could be streamlined. Maybe in a future commit. Also note that the sed commands here do assume python3.12, which means you will need to modify those commands if your python version is different. 
+
 1st error:
 ModuleNotFoundError: No module named 'tensorflow.contrib'
 
@@ -35,7 +37,7 @@ find . -type f | xargs sed -i  's/tf\.ConfigProto/tf\.compat\.v1\.ConfigProto/g'
 
 6th error:
 Segmentation fault (core dumped)
-It's from importing tensorflow. I uninstalled and reinstalled tensorflow, and it was solved. The segmentation fault came back in the future and uninstalling and reinstalling again solved it. It is probably from the `sed` commands, which are modifying and breaking the venv files for tensorflow... in which case, the sed-based commands should all ideally just be modified to not operate on the `lib` folder
+It's from importing tensorflow. I uninstalled and reinstalled tensorflow, and it was solved. The segmentation fault came back in the future and uninstalling and reinstalling again solved it. It is probably from the `sed` commands, which are modifying and breaking the venv files for tensorflow... in which case, the sed-based commands should all ideally be modified to not operate on the `lib` folder, unless they are supposed to do so. 
 
 7th error:
 AttributeError: module 'tensorflow' has no attribute 'Session'. Did you mean: 'version'?
@@ -127,4 +129,22 @@ sed -i 's/dim\.value/dim/g' utils/utils.py
 
 -----------------
 
-With this, it runs for me. 
+With this, GCN runs for me. 
+
+-----------------
+To be able to run other models: 
+
+Error 21:
+AttributeError: module 'tensorflow._api.v2.compat.v2.__internal__' has no attribute 'register_load_context_function'. Did you mean: 'register_call_context_function'?
+
+sed -i 's/register_load_context_function/register_call_context_function/g' lib/python3.12/site-packages/tf_keras/src/saving/legacy/saved_model/load_context.py
+
+Error 22:
+ModuleNotFoundError: No module named 'tf_keras.legacy_tf_layers'
+
+sed -i 's/tensorflow.python.layers import normalization/tf_keras.src.legacy_tf_layers import normalization/g' lib/python3.12/site-packages/tf_slim/layers/layers.py
+
+Now, non-GCN models work too! 
+
+
+
