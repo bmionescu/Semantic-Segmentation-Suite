@@ -144,7 +144,16 @@ ModuleNotFoundError: No module named 'tf_keras.legacy_tf_layers'
 
 sed -i 's/tensorflow.python.layers import normalization/tf_keras.src.legacy_tf_layers import normalization/g' lib/python3.12/site-packages/tf_slim/layers/layers.py
 
-Now, non-GCN models work too! 
+Now, some other models besides GCN work too.
+
+Error 23 (when using PSPNet): 
+AttributeError: module 'tensorflow._api.v2.image' has no attribute 'resize_bilinear'
+
+sed -i 's/tf.image.resize_bilinear/tf.compat.v1.image.resize_bilinear/g' models/PSPNet.py
+
+I am aware that DeepLabV3 and DeepLabV3_plus don't work yet. Will fix in another commit. 
+
+
 
 
 
